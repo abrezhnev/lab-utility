@@ -1,0 +1,13 @@
+prompt 0
+default pxeboot
+timeout 1
+
+label pxeboot
+  menu label ^Install from network
+  kernel http://192.168.47.3:8080/rhcos.kernel
+  append initrd=http://192.168.47.3:8080/rhcos.initramfs ip=dhcp rd.neednet=1 console=tty0 console=ttyS0 coreos.inst=yes coreos.inst.install_dev=vda coreos.inst.image_url=http://192.168.47.3:8080/rhcos.raw.gz coreos.inst.ignition_url=http://192.168.47.3:8080/{{ item.role }}.ign
+
+label local
+  menu label Boot from ^local drive
+  menu default
+  localboot 0xffff

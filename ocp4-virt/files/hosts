@@ -1,0 +1,13 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+10.149.23.10 classroom classroom.example.com
+192.168.47.2 bastion bastion.example.com
+192.168.47.3 utility utility.example.com
+192.168.47.4 bootstrap bootstrap.example.com
+192.168.47.10 master-0 master-0.example.com
+192.168.47.11 master-1 master-1.example.com
+192.168.47.12 master-2 master-2.example.com
+192.168.47.13 worker-0 worker-0.example.com
+192.168.47.14 worker-1 worker-1.example.com
+192.168.47.15 worker-2 worker-2.example.com
+192.168.47.16 worker-3 worker-3.example.com

@@ -1,0 +1,105 @@
+---
+- hosts: localhost
+  connection: local
+
+  handlers:
+  - name: restart dnsmasq
+    service:
+      name: dnsmasq
+      state: restarted
+
+  - name: restart haproxy
+    service:
+      name: haproxy
+      state: restarted
+
+  - name: restart httpd
+    service:
+      name: httpd
+      state: restarted
+
+  tasks:
+  - name: enable haproxy connect
+    seboolean:
+      name: haproxy_connect_any
+      state: yes
+      persistent: yes
+
+  - name: install packages
+    package:
+      name:
+      - dnsmasq
+      - haproxy
+      - httpd
+      - jq
+      - syslinux-tftpboot
+      state: present
+
+  - name: create tftpboot directory
+    file:
+      path: '{{ item }}'
+      state: directory
+      seuser: system_u
+      serole: object_r
+      setype: tftpdir_rw_t
+    with_items:
+      - /var/lib/tftpboot
+      - /var/lib/tftpboot/pxelinux
+      - /var/lib/tftpboot/pxelinux/pxelinux.cfg
+
+  - name: copy pxelinux files to tftpboot
+    copy:
+      src: '/tftpboot/{{ item }}'
+      dest: '/var/lib/tftpboot/pxelinux/{{ item }}'
+    with_items:
+      - pxelinux.0
+      - ldlinux.c32
+      - vesamenu.c32
+
+  - name: configure dnsmasq
+    copy:
+      src: pxeboot.conf
+      dest: /etc/dnsmasq.d/pxeboot.conf
+    notify:
+    - restart dnsmasq
+
+  - name: configure haproxy
+    copy:
+      src: haproxy.cfg
+      dest: /etc/haproxy/haproxy.cfg
+    notify:
+    - restart haproxy
+
+  - name: configure httpd to listen on port 8080
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^Listen '
+      insertafter: '^#Listen '
+      line: Listen 8080
+    notify:
+    - restart httpd
+
+  - name: create pxeboot config files for OpenShift nodes
+    template:
+      src: coreos.j2
+      dest: '/var/lib/tftpboot/pxelinux/pxelinux.cfg/{{ item.filename }}'
+    with_items:
+    - { filename: 01-52-54-00-01-10-04, role: bootstrap }
+    - { filename: 01-52-54-00-01-10-20, role: master }
+    - { filename: 01-52-54-00-01-10-21, role: master }
+    - { filename: 01-52-54-00-01-10-22, role: master }
+    - { filename: 01-52-54-00-01-10-23, role: worker }
+    - { filename: 01-52-54-00-01-10-24, role: worker }
+    - { filename: 01-52-54-00-01-10-25, role: worker }
+    - { filename: 01-52-54-00-01-10-26, role: worker }
+
+  - name: start services
+    systemd:
+      name: '{{ item }}'
+      enabled: yes
+      state: started
+    with_items:
+    - dnsmasq
+    - haproxy
+    - httpd
+
