@@ -3,6 +3,7 @@
   connection: local
 
   vars:
+    openshift_download_url: http://classroom.example.com/pub/openshift-v4/dependencies/rhcos/latest/latest
     minio_access_key: minioadmin
     minio_secret_key: minioadmin
 
@@ -151,3 +152,12 @@
       name: minio
       enabled: yes
       state: started
+
+  - name: make coreos files available through web-server
+    get_url:
+      url: '{{ openshift_download_url }}/{{ item }}'
+      dest: '/var/www/html/{{ item }}'
+    with_items:
+    - rhcos-metal.x86_64.raw.gz
+    - rhcos-installer-kernel-x86_64
+    - rhcos-installer-initramfs.x86_64.img
