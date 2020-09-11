@@ -23,6 +23,9 @@
       name: httpd
       state: restarted
 
+  - name: export nfs shares
+    command: /usr/sbin/exportfs -a
+
   tasks:
   - name: enable haproxy connect
     seboolean:
@@ -161,3 +164,34 @@
     - rhcos-metal.x86_64.raw.gz
     - rhcos-installer-kernel-x86_64
     - rhcos-installer-initramfs.x86_64.img
+
+  - name: disable NFSv3 protocol
+    ini_file:
+      path: /etc/nfs.conf
+      section: nfsd
+      option: vers3
+      value: n
+
+  - name: disable NFSv3 services
+    systemd:
+      name: '{{ item }}'
+      state: stopped
+      masked: yes
+    with_items:
+    - rpc-statd.service
+    - rpcbind.service
+    - rpcbind.socket
+
+  - name: enable and start the nfs server
+    systemd:
+      name: nfs-server
+      enabled: yes
+      masked: no
+      state: started
+
+  - name: export PVs over NFS
+    copy:
+      content: '/var/srv/nfs *(rw,no_root_squash)'
+      dest: /etc/exports.d/pv.exports
+    notify:
+    - export nfs shares
